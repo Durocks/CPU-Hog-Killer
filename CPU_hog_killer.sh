@@ -2,7 +2,7 @@
 
 # Configuration
 SAMPLE_INTERVAL=10          # Interval between CPU usage samples in seconds
-MONITOR_DURATION=61         # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
+MONITOR_DURATION=60         # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
 CPU_THRESHOLD=30            # CPU usage threshold (in percent)
 TOP_PROCESSES_COUNT=5       # Number of top processes to monitor
 MEASUREMENTS_LIMIT=6        # Number of measurements before killing the process
@@ -13,6 +13,15 @@ HIGH_PRIORITY_MULTIPLIER=3  # How many times bigger the CPU usage has to be to k
 declare -A pids
 declare -A avg_cpu_usage
 declare -A measurements_count
+
+# Function to cleanup measurements
+cleanup() {
+    # Reset all measurements
+    pids=()              # Clear the PID array
+    avg_cpu_usage=()    # Clear the average CPU usage array
+    measurements_count=() # Clear the measurements count array
+    echo "All measurements cleared."
+}
 
 # Function to check if the system is idle (e.g., screen is off)
 is_system_idle() {
@@ -41,6 +50,13 @@ monitor_and_analyze() {
     echo "Monitoring CPU usage for $MONITOR_DURATION seconds..."
     TIME_SPENT=0
     while [ "$TIME_SPENT" -lt "$MONITOR_DURATION" ]; do
+        # Check if the system is idle at the beginning of each iteration
+        if ! is_system_idle; then
+            echo "System is not idle. Exiting monitoring for this cycle."
+            cleanup  # Call cleanup after monitoring duration is complete
+            return  # Exit the function to resume in the next cycle
+        fi
+
         echo "Collecting CPU usage snapshot at $TIME_SPENT seconds..."
 
         # Get the top processes consuming the most CPU by comm
@@ -124,6 +140,7 @@ monitor_and_analyze() {
         sleep "$SAMPLE_INTERVAL"
         TIME_SPENT=$((TIME_SPENT + SAMPLE_INTERVAL))
     done
+    cleanup  # Call cleanup after monitoring duration is complete
 }
 
 # Main loop
