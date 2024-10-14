@@ -104,7 +104,6 @@ monitor_and_analyze() {
             # Format AVG-CPU% to 2 decimal places and round off
             avg_cpu=$(printf "%.2f" "$avg_cpu")
             # Display both current CPU% and AVG-CPU%
-            echo "Command name: $cmd" 
             echo "PID: $pid, CPU%: $cpu, AVG-CPU%: $avg_cpu, Command: $cmd, Measurements: ${measurements_count[$pid]}"
         done
 
