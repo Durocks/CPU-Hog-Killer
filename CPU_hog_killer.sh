@@ -1,11 +1,13 @@
 #!/system/bin/sh
 
 # Configuration
-SAMPLE_INTERVAL=10  # Interval between CPU usage samples in seconds
-MONITOR_DURATION=300  # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
-CPU_THRESHOLD=30  # CPU usage threshold (in percent)
-TOP_PROCESSES_COUNT=5  # Number of top processes to monitor
-MEASUREMENTS_LIMIT=15  # Number of measurements before killing the process
+SAMPLE_INTERVAL=10          # Interval between CPU usage samples in seconds
+MONITOR_DURATION=61         # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
+CPU_THRESHOLD=30            # CPU usage threshold (in percent)
+TOP_PROCESSES_COUNT=5       # Number of top processes to monitor
+MEASUREMENTS_LIMIT=6        # Number of measurements before killing the process
+SLEEP_TIME=600              # Number of seconds to wait for the next run, when the screen is off.
+HIGH_PRIORITY_MULTIPLIER=3  # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
 
 # Structure to hold process data
 declare -A pids
@@ -25,6 +27,13 @@ is_system_idle() {
 trim_and_extract_command() {
     # Extract the first word from the ARGS string and print it
     echo "$1" | awk '{print $1}'
+}
+
+# Function to send notification when a process is killed
+send_notification() {
+    local cmd=$1
+    local avg_cpu=$2
+    su -lp 2000 -c "cmd notification post -S bigtext -t 'Title' 'Tag' 'Multiline text'"
 }
 
 # Function to monitor CPU usage and analyze the top processes
@@ -78,18 +87,23 @@ monitor_and_analyze() {
                 # Check if the average CPU usage exceeds the threshold and if measurements limit is reached
                 if (( measurements_count[$pid] >= MEASUREMENTS_LIMIT )); then
                     avg_cpu=$(echo "${avg_cpu_usage[$pid]} / ${measurements_count[$pid]}" | bc -l)
+                    formatted_avg_cpu=$(printf "%.2f" "$avg_cpu")  # Format to two decimal places
                     # Determine the kill condition based on user
-                    if [[ "$user" == "system" ]]; then
+                    if [[ "$cmd" == "system_server" ]]; then
                         # For system user, check if avg CPU usage is greater than double the threshold
-                        if (( $(echo "$avg_cpu > $((CPU_THRESHOLD * 2))" | bc -l) )); then
-                            echo "Killing system process $pid (Average CPU usage: $avg_cpu%)"
+                        if (( $(echo "$avg_cpu > $((CPU_THRESHOLD * $HIGH_PRIORITY_MULTIPLIER))" | bc -l) )); then
+                            echo "Killing system process $pid (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
+                            su
+                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
                         fi
                     else
                         # For other users, check if avg CPU usage is greater than the threshold
                         if (( $(echo "$avg_cpu > $CPU_THRESHOLD" | bc -l) )); then
-                            echo "Killing process $pid (Average CPU usage: $avg_cpu%)"
+                            echo "Killing process $pid (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
+                            su
+                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
                         fi
                     fi
                 fi
@@ -121,7 +135,7 @@ while true; do
     else
         echo "System is not idle. Skipping monitoring."
     fi
-    # Run every hour (3600 seconds)
-    echo "Sleeping for 3600 seconds before the next check..."
-    sleep 3600
+    # Run every 10 minutes ($SLEEP_TIME seconds)
+    echo "Sleeping for $SLEEP_TIME seconds before the next check..."
+    sleep $SLEEP_TIME
 done
