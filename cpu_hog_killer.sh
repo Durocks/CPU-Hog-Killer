@@ -24,13 +24,15 @@ cleanup() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') All measurements cleared."
 }
 
-# Function to check if the system is idle (e.g., screen is off)
-is_system_idle() {
-    if dumpsys power | grep -q 'mActive=false'; then
-        return 0  # System is idle
-    else
-        return 1  # System is active
+# Function to check if the system is idle (not charging and screen is locked)
+should_monitor() {
+    if dumpsys battery | grep -q 'AC powered: false' && 
+       dumpsys battery | grep -q 'USB powered: false' &&
+       dumpsys battery | grep -q 'Wireless powered: false' && 
+       (dumpsys nfc | grep -q 'mScreenState=OFF_LOCKED' || dumpsys nfc | grep -q 'mScreenState=ON_LOCKED'); then
+        return 0  # System is not charging and screen is locked
     fi
+    return 1  # System is either charging or unlocked
 }
 
 # Function to trim whitespace and extract the first word
@@ -53,8 +55,8 @@ monitor_and_analyze() {
     TIME_SPENT=0
     while [ "$TIME_SPENT" -lt "$MONITOR_DURATION" ]; do
         # Check if the system is idle at the beginning of each iteration
-        if ! is_system_idle; then
-            echo "System is not idle. Exiting monitoring for this cycle."
+        if ! should_monitor; then
+            echo "System is not idle or it's charging. Exiting monitoring for this cycle."
             cleanup  # Call cleanup after monitoring duration is complete
             return 1 # Exit the function to resume in the next cycle
         fi
@@ -155,7 +157,7 @@ monitor_and_analyze() {
 MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME
 while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
-    if is_system_idle; then
+    if should_monitor; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle. Starting to monitor CPU usage."
         
         # Call the monitoring function
@@ -169,7 +171,7 @@ while true; do
         echo "$(date '+%Y-%m-%d %H:%M:%S') Next monitoring in $MONITOR_WAIT_TIME seconds."
     else
         MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME  # Reset wait time if the system is active
-        echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle. Skipping monitoring for $MONITOR_WAIT_TIME seconds."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle or it's charging. Skipping monitoring for $MONITOR_WAIT_TIME seconds."
     fi
     sleep "$MONITOR_WAIT_TIME"
 done
