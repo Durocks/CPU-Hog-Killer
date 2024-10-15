@@ -113,9 +113,9 @@ monitor_and_analyze() {
                             echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
                             TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
-                            setenforce 0
+                            setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
                             su
-                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
+                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
                             setenforce $ORIGINAL_SELINUX
                         fi
                     else
@@ -124,9 +124,10 @@ monitor_and_analyze() {
                             echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
                             TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
-                            setenforce 0
+                            # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
+                            setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
                             su
-                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
+                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
                             setenforce $ORIGINAL_SELINUX
                         fi
                     fi
