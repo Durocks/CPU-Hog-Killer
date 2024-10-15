@@ -26,17 +26,20 @@ cleanup() {
 
 # Function to check if the system is idle (not charging and screen is locked)
 should_monitor() {
-    # Get battery charging states
-    local ac_powered=$(dumpsys battery | grep 'AC powered:' | awk '{print $3}')
-    local usb_powered=$(dumpsys battery | grep 'USB powered:' | awk '{print $3}')
-    local wireless_powered=$(dumpsys battery | grep 'Wireless powered:' | awk '{print $3}')
+    # Get device idle states
+    local device_idle_info=$(dumpsys deviceidle)
 
-    # Get NFC screen state
-    local screen_state=$(dumpsys nfc | grep 'mScreenState=')
+    # echo "$device_idle_info"
+
+    # Extract relevant values
+    local screen_locked=$(echo "$device_idle_info" | grep -o 'mScreenLocked=[^ ]*' | awk -F '=' '{print $2}')
+    local charging=$(echo "$device_idle_info" | grep -o 'mCharging=[^ ]*' | awk -F '=' '{print $2}')  # Fixed the missing quote
+
+    # echo "Screen Locked: $screen_locked"
+    # echo "Charging: $charging"
 
     # Check if the system is not charging and screen is locked
-    if [[ "$ac_powered" == "false" && "$usb_powered" == "false" && "$wireless_powered" == "false" && 
-          ("$screen_state" == *"mScreenState=OFF_LOCKED"* || "$screen_state" == *"mScreenState=ON_LOCKED"*) ]]; then
+    if [[ "$charging" == "false" && "$screen_locked" == "true" ]]; then
         return 0  # System is not charging and screen is locked
     fi
     return 1  # System is either charging or unlocked
@@ -169,12 +172,14 @@ while true; do
         
         # Call the monitoring function
         monitor_and_analyze
-        status=$?  # Capture the exit status
-        
-        if [ $status -eq 0 ]; then  # Check if the function returned a zero status (indicating success)
-            echo "Doubling the Monitor Wait Time…"
-            MONITOR_WAIT_TIME=$((MONITOR_WAIT_TIME * 2))  # Double the wait time after each monitoring session
-        fi
+
+#         I'm commenting this, because it's not worth it. Running should_monitor every 60 seconds should not consume much CPU.
+#        status=$?  # Capture the exit status
+#        if [ $status -eq 0 ]; then  # Check if the function returned a zero status (indicating success)
+#            echo "Doubling the Monitor Wait Time…"
+#            # MONITOR_WAIT_TIME=$((MONITOR_WAIT_TIME * 2))  # Double the wait time after each monitoring session
+#            fi
+
         echo "$(date '+%Y-%m-%d %H:%M:%S') Next monitoring in $MONITOR_WAIT_TIME seconds."
     else
         MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME  # Reset wait time if the system is active
