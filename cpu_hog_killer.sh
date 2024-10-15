@@ -21,7 +21,7 @@ cleanup() {
     avg_cpu_usage=()          # Clear the average CPU usage array
     measurements_count=()     # Clear the measurements count array
     unset pids avg_cpu_usage measurements_count
-    echo "$(date '+%Y-%m-%d %H:%M:%S') All measurements cleared."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') All previous measurements cleared."
 }
 
 # Function to check if the system is idle (not charging and screen is locked)
@@ -168,7 +168,7 @@ MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME
 while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
     if should_monitor; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle. Starting to monitor CPU usage."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle."
         
         # Call the monitoring function
         monitor_and_analyze
