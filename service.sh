@@ -1,5 +1,5 @@
 #!/system/bin/sh
-
+# set -x 
 resetprop -w sys.boot_completed 0
 MODDIR=${0%/*}
 
@@ -35,7 +35,6 @@ MODPATH="$MODDIR"
 echo "MODPATH: $MODPATH"
 
 # Start the CPU hog killer script with an absolute path
-sleep 20
 chmod 755 "$MODPATH/cpu_hog_killer.sh"
 /system/bin/sh "$MODPATH/cpu_hog_killer.sh"
 

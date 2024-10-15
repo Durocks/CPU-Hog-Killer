@@ -1,11 +1,11 @@
-<h1 align="center">CPU Hog Killer - Magisk Module</h1>
+<h1 align="center">OnePlus 12 System Server Mods - Magisk Module</h1>
 
 <div align="center">
   <!-- Version -->
     <img src="https://img.shields.io/badge/Version-v1.0-blue.svg?longCache=true&style=popout-square"
       alt="Version" />
   <!-- Last Updated -->
-    <img src="https://img.shields.io/badge/Updated-October%2014,%202024-green.svg?longCache=true&style=flat-square"
+    <img src="https://img.shields.io/badge/Updated-October%208,%202024-green.svg?longCache=true&style=flat-square"
       alt="_time_stamp_" />
   <!-- Min Magisk -->
     <img src="https://img.shields.io/badge/MinMagisk-24.0-red.svg?longCache=true&style=flat-square"
@@ -13,49 +13,37 @@
 </div>
 
 <div align="center">
-  <strong>CPU Hog Killer is a Magisk module designed to monitor CPU usage on your device, automatically identifying and terminating processes that consume excessive CPU resources. This helps improve battery life and overall system performance.</strong>
+  <strong>OnePlus 12 System Server Mods is a Magisk module designed for the OnePlus 12 that disables specific system server threads and subprocesses, such as <code>osense</code>, which are known to consume high amounts of CPU resources. This helps optimize battery life and enhance overall system performance.</strong>
 </div>
 
 <div align="center">
   <h3>
-    <a href="https://github.com/Durocks/CPU-Hog-Killer">
+    <a href="https://github.com/Durocks/Oneplus-12-System-Server-Mods">
       Source Code
     </a>
   </h3>
 </div>
 
 ### Background
-Having a rooted device, I noticed executing the <code>top</code> command sometimes showed rogue processes consuming high amounts of CPU resources. This led to increased heat and battery drain. The **CPU Hog Killer** module was created to automate the detection and termination of these processes, ensuring a more efficient and responsive device.
+Having a rooted OnePlus 12, I noticed executing the <code>top</code> command sometimes showed a constant 40-100% usage from the <code>system_server</code> main process. I therefore executed <code>top -H</code> to see what specific thread was causing the high CPU usage, and it turned out to be a thread called <code>osense.compress</code>, which according to the very little information I found, is a OnePlus process related to memory compression and processes management. I was able to stop the process by rebooting or killing <code>system_server</code> (Which of course triggered a System UI restart), but after a while, the CPU usage was back to 40-100%.
 
 ### What does the module do?
-• **Keeps an Eye on CPU Usage**: Monitors running processes and calculates their average CPU usage.<br><br>
-• **Auto-Kills Rogue Processes**: If a process consistently uses more CPU than a set threshold, the module will terminate it.<br><br>
-• **Improves Battery Life**: Aims to reduce battery drain and heat by keeping resource-heavy apps in check.<br><br>
-• **Notifies you about killed processes**: It notifies you when it kills a process, so you can both be kept in the loop about what's going on with your device, and be alerted when an app is constantly restarting on it's own and eating the CPU, so you can take some action, like restricting it's battery usage permissions.
-
-### FAQ
-1. Why does it keep notifying me of a killed process?
-
-    If that happens, then you have yourself a rogue app or process. If it's an app, open it's App Info, and restrict it's battery usage.
-
-2. Does it create a log anywhere, so I can see what it's doing?
-
-    Yes, it does: /sdcard/cpu_hog_killer.log
+Simple, it modifies the <code>init.rc</code> file under <code>/system/etc/init/hw/</code>, commenting the lines that start the <code>osense</code> process. I still need some testing to be sure it's actually managing to stop the process. So far, I haven't seen it start again, and the CPU usage has been normal (Closer to 12%) when idle.
 
 ### Usage
 1. **Installation**:
-   - Download the latest version of the `CPU_Hog_Killer.zip` module from the <a href="https://github.com/Durocks/CPU-Hog-Killer/releases/">releases</a> section.
+   - Download the latest version of the `OnePlus.12.System.Server.Mods` module zip file from the <a href="https://github.com/Durocks/Oneplus-12-System-Server-Mods/releases/">releases</a> section.
    - Open Magisk Manager and navigate to the **Modules** section.
-   - Tap **Install from storage** and select the `CPU_Hog_Killer.zip` file.
+   - Tap **Install from storage** and select the `OnePlus.12.System.Server.Mods.zip` file.
 
 2. **Effect**:
-   - Once installed, the module will actively monitor CPU usage, terminating any processes that exceed the defined CPU threshold, effectively reducing resource consumption.
+   - Once installed, the module will disable resource-heavy system server threads to reduce CPU usage, helping to save battery and improve device responsiveness.
 
 3. **Further Configuration**:
-   - No additional configuration is required after installation. The module operates automatically.
+   - No additional configuration is required after installation. The module is designed to work out of the box.
 
 ### Contributions
 Contributions are welcome! Feel free to submit issues or pull requests.
 
 ### Disclaimer
-This module is intended for use on rooted devices and may not function correctly on all devices. Use it at your own risk.
+This module is intended for use with the OnePlus 12 and may not work properly on other devices. Use it at your own risk.
