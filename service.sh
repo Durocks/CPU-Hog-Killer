@@ -8,12 +8,11 @@ until [ -d "/sdcard/" ]; do
     echo "/sdcard/ is not accessible yet. Waiting..."
     sleep 2
 done
-
 # Now that /sdcard/ is accessible, proceed
 echo "/sdcard/ is accessible."
 
-
 # Redirect output to a log file
+rm /sdcard/cpu_hog_killer.log
 LOGFILE="/sdcard/cpu_hog_killer.log"
 exec > "$LOGFILE" 2>&1
 
