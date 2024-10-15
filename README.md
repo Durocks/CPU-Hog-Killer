@@ -48,6 +48,10 @@ This way, no mattery what Android phone brand you have, what custom ROM you migh
 
     Yes, it does: /sdcard/cpu_hog_killer.log
 
+3. Why is my phone restarting on its own?
+
+    This means the `system_server` process was killed by my module. This should only happen if it's CPU usage is very high for a long period of time, likely caused by a `thread` hiding behind `system_server`, which isn't normal. My module will kill it so the phone can restart and the CPU usage can go back to normal. Still, you should investigate why that's happening. You can do so by disabling `CPU Hog Killer` and executing `top -H` in Termux with `su` permissions, to check which malicious threads are hiding behind `system_server`. You might need for them to actually be running, though.
+
 ### Usage
 1. **Installation**:
    - Download the latest version of the `CPU_Hog_Killer.zip` module from the <a href="https://github.com/Durocks/CPU-Hog-Killer/releases/">releases</a> section.
