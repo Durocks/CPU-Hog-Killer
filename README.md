@@ -28,7 +28,10 @@
 Having a rooted device, I noticed executing the <code>top</code> command sometimes showed rogue processes consuming high amounts of CPU resources. This led to increased heat and battery drain. The **CPU Hog Killer** module was created to automate the detection and termination of these processes, ensuring a more efficient and responsive device.
 
 ### What does the module do?
-The module continuously monitors CPU usage, calculating the average usage of running processes. If any process exceeds a defined CPU usage threshold, it is automatically terminated, helping to maintain system stability and performance.
+• **Keeps an Eye on CPU Usage**: Monitors running processes and calculates their average CPU usage.<br><br>
+• **Auto-Kills Rogue Processes**: If a process consistently uses more CPU than a set threshold, the module will terminate it.<br><br>
+• **Improves Battery Life**: Aims to reduce battery drain and heat by keeping resource-heavy apps in check.<br><br>
+• **Notifies you about killed processes**: It notifies you when it kills a process, so you can both be kept in the loop about what's going on with your device, and be alerted when an app is constantly restarting on it's own and eating the CPU, so you can take some action, like restricting it's battery usage permissions.
 
 ### FAQ
 1. Why does it keep notifying me of a killed process?
