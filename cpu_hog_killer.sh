@@ -1,26 +1,25 @@
 #!/system/bin/sh
+# set -x
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') Current shell: $SHELL"
 
 # Configuration
-SAMPLE_INTERVAL=10          # Interval between CPU usage samples in seconds
-MONITOR_DURATION=60         # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
-CPU_THRESHOLD=30            # CPU usage threshold (in percent)
-TOP_PROCESSES_COUNT=5       # Number of top processes to monitor
-MEASUREMENTS_LIMIT=6        # Number of measurements before killing the process
-SLEEP_TIME=600              # Number of seconds to wait for the next run, when the screen is off.
-HIGH_PRIORITY_MULTIPLIER=3  # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
-
-# Structure to hold process data
-declare -A pids
-declare -A avg_cpu_usage
-declare -A measurements_count
+SAMPLE_INTERVAL=10              # Interval between CPU usage samples in seconds
+MONITOR_DURATION=65             # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
+CPU_THRESHOLD=30                # CPU usage threshold (in percent)
+TOP_PROCESSES_COUNT=5           # Number of top processes to monitor
+MEASUREMENTS_LIMIT=6            # Number of measurements before killing the process
+SLEEP_TIME=60                   # Number of seconds to wait for the next run, when the screen is off.
+HIGH_PRIORITY_MULTIPLIER=3      # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
+ORIGINAL_SELINUX=$(getenforce)    # Backup the original SELinux Status.
 
 # Function to cleanup measurements
 cleanup() {
     # Reset all measurements
-    pids=()              # Clear the PID array
-    avg_cpu_usage=()    # Clear the average CPU usage array
-    measurements_count=() # Clear the measurements count array
-    echo "All measurements cleared."
+    pids=                   # Clear the PID array
+    avg_cpu_usage=          # Clear the average CPU usage array
+    measurements_count=     # Clear the measurements count array
+    echo "$(date '+%Y-%m-%d %H:%M:%S') All measurements cleared."
 }
 
 # Function to check if the system is idle (e.g., screen is off)
@@ -47,7 +46,8 @@ send_notification() {
 
 # Function to monitor CPU usage and analyze the top processes
 monitor_and_analyze() {
-    echo "Monitoring CPU usage for $MONITOR_DURATION seconds..."
+    cleanup  # Call cleanup before starting the monitoring.
+    echo "$(date '+%Y-%m-%d %H:%M:%S') Monitoring CPU usage for $MONITOR_DURATION seconds..."
     TIME_SPENT=0
     while [ "$TIME_SPENT" -lt "$MONITOR_DURATION" ]; do
         # Check if the system is idle at the beginning of each iteration
@@ -57,11 +57,11 @@ monitor_and_analyze() {
             return  # Exit the function to resume in the next cycle
         fi
 
-        echo "Collecting CPU usage snapshot at $TIME_SPENT seconds..."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Collecting CPU usage snapshot at $TIME_SPENT seconds..."
 
         # Get the top processes consuming the most CPU by comm
         # top_processes=$(ps -f -eo pid,user,comm,%cpu --sort=-%cpu | head -n "$((TOP_PROCESSES_COUNT + 1))")  # +1 to skip the header
-        top_processes=$(top -b -n 1 -o pid,user,comm,%cpu | tail -n +6 | head -n "$((TOP_PROCESSES_COUNT + 1))")  # +1 to skip the header and irrelevant lines
+        top_processes=$(top -b -n 1 -o pid,user,comm,%cpu | tail -n +6 | grep -v "toybox" | head -n "$((TOP_PROCESSES_COUNT + 1))")  # +1 to skip the header and irrelevant lines
 
         # Array to track current top processes
         current_top=()
@@ -108,18 +108,24 @@ monitor_and_analyze() {
                     if [[ "$cmd" == "system_server" ]]; then
                         # For system user, check if avg CPU usage is greater than double the threshold
                         if (( $(echo "$avg_cpu > $((CPU_THRESHOLD * $HIGH_PRIORITY_MULTIPLIER))" | bc -l) )); then
-                            echo "Killing system process $pid (Average CPU usage: $formatted_avg_cpu%)"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
+                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
+                            setenforce 0
                             su
                             su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
+                            setenforce $ORIGINAL_SELINUX
                         fi
                     else
                         # For other users, check if avg CPU usage is greater than the threshold
                         if (( $(echo "$avg_cpu > $CPU_THRESHOLD" | bc -l) )); then
-                            echo "Killing process $pid (Average CPU usage: $formatted_avg_cpu%)"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
                             kill "$pid"  # Kill the process
+                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
+                            setenforce 0
                             su
                             su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'CPU Usage: $formatted_avg_cpu%'"
+                            setenforce $ORIGINAL_SELINUX
                         fi
                     fi
                 fi
@@ -140,19 +146,18 @@ monitor_and_analyze() {
         sleep "$SAMPLE_INTERVAL"
         TIME_SPENT=$((TIME_SPENT + SAMPLE_INTERVAL))
     done
-    cleanup  # Call cleanup after monitoring duration is complete
 }
 
 # Main loop
 while true; do
-    echo "Checking if the system is idle..."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
     if is_system_idle; then
-        echo "System is idle. Starting to monitor CPU usage."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle. Starting to monitor CPU usage."
         monitor_and_analyze
     else
-        echo "System is not idle. Skipping monitoring."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle. Skipping monitoring."
     fi
     # Run every 10 minutes ($SLEEP_TIME seconds)
-    echo "Sleeping for $SLEEP_TIME seconds before the next check..."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') Sleeping for $SLEEP_TIME seconds before the next check..."
     sleep $SLEEP_TIME
 done
