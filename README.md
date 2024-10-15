@@ -30,6 +30,11 @@ Having a rooted device, I noticed executing the <code>top</code> command sometim
 ### What does the module do?
 The module continuously monitors CPU usage, calculating the average usage of running processes. If any process exceeds a defined CPU usage threshold, it is automatically terminated, helping to maintain system stability and performance.
 
+### FAQ
+1. Why does it keep notifying me of a killed process?
+
+    If that happens, then you have yourself a rogue app or process. If it's an app, open it's App Info, and restrict it's battery usage.
+
 ### Usage
 1. **Installation**:
    - Download the latest version of the `CPU_Hog_Killer.zip` module from the <a href="https://github.com/Durocks/CPU-Hog-Killer/releases/">releases</a> section.
