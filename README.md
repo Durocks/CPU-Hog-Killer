@@ -38,6 +38,10 @@ Having a rooted device, I noticed executing the <code>top</code> command sometim
 
     If that happens, then you have yourself a rogue app or process. If it's an app, open it's App Info, and restrict it's battery usage.
 
+2. Does it create a log anywhere, so I can see what it's doing?
+
+    Yes, it does: /sdcard/cpu_hog_killer.log
+
 ### Usage
 1. **Installation**:
    - Download the latest version of the `CPU_Hog_Killer.zip` module from the <a href="https://github.com/Durocks/CPU-Hog-Killer/releases/">releases</a> section.
