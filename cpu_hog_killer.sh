@@ -16,9 +16,10 @@ ORIGINAL_SELINUX=$(getenforce)    # Backup the original SELinux Status.
 # Function to cleanup measurements
 cleanup() {
     # Reset all measurements
-    pids=                   # Clear the PID array
-    avg_cpu_usage=          # Clear the average CPU usage array
-    measurements_count=     # Clear the measurements count array
+    pids=()                   # Clear the PID array
+    avg_cpu_usage=()          # Clear the average CPU usage array
+    measurements_count=()     # Clear the measurements count array
+    unset pids avg_cpu_usage measurements_count
     echo "$(date '+%Y-%m-%d %H:%M:%S') All measurements cleared."
 }
 
