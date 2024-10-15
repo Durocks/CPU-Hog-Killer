@@ -33,6 +33,12 @@ Having a rooted device, I noticed executing the <code>top</code> command sometim
 • **Improves Battery Life**: Aims to reduce battery drain and heat by keeping resource-heavy apps in check.<br><br>
 • **Notifies you about killed processes**: It notifies you when it kills a process, so you can both be kept in the loop about what's going on with your device, and be alerted when an app is constantly restarting on it's own and eating the CPU, so you can take some action, like restricting it's battery usage permissions.
 
+### How does it work?
+
+Let's say a rogue app is using 100% of a CPU in the background, while you're not even using your phone. This magisk module runs a constant non CPU intensive script. Every certain amount of time, it checks if your screen is off, and if it is, it will start monitoring the running processes / apps. First, it will get the top 5 CPU intensive processes / apps, each with their CPU usage. It will give them a certain amount of chances to turn that CPU usage down, while calculating how much CPU they are using on average, and if they don't, after they reach a certain amount of chances, it will check if their average CPU usage is over a pre determined threshold. If it is, the process will be killed, and the user will receive a notification about the CPU intensive process / app that was killed, so they can remove their battery usage permissions.
+
+This way, no mattery what Android phone brand you have, what custom ROM you might have installed, or what firmware version, you can rest assured your phone will run cool, and the battery will not be consumed by background processes / apps.
+
 ### FAQ
 1. Why does it keep notifying me of a killed process?
 
