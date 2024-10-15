@@ -1,7 +1,7 @@
 #!/system/bin/sh
 # set -x
 
-echo "$(date '+%Y-%m-%d %H:%M:%S') Current shell: $SHELL"
+# echo "$(date '+%Y-%m-%d %H:%M:%S') Current shell: $SHELL"
 
 # Configuration
 SAMPLE_INTERVAL=10                  # Interval between CPU usage samples in seconds
