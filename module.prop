@@ -1,6 +1,6 @@
 id=cpu_hog_killer
 name=CPU Hog Killer
-version=1.0
+version=1.3
 versionCode=1
 author=Fox
 description=Module to kill processes hogging the CPU
