@@ -26,10 +26,17 @@ cleanup() {
 
 # Function to check if the system is idle (not charging and screen is locked)
 should_monitor() {
-    if dumpsys battery | grep -q 'AC powered: false' && 
-       dumpsys battery | grep -q 'USB powered: false' &&
-       dumpsys battery | grep -q 'Wireless powered: false' && 
-       (dumpsys nfc | grep -q 'mScreenState=OFF_LOCKED' || dumpsys nfc | grep -q 'mScreenState=ON_LOCKED'); then
+    # Get battery charging states
+    local ac_powered=$(dumpsys battery | grep 'AC powered:' | awk '{print $3}')
+    local usb_powered=$(dumpsys battery | grep 'USB powered:' | awk '{print $3}')
+    local wireless_powered=$(dumpsys battery | grep 'Wireless powered:' | awk '{print $3}')
+
+    # Get NFC screen state
+    local screen_state=$(dumpsys nfc | grep 'mScreenState=')
+
+    # Check if the system is not charging and screen is locked
+    if [[ "$ac_powered" == "false" && "$usb_powered" == "false" && "$wireless_powered" == "false" && 
+          ("$screen_state" == *"mScreenState=OFF_LOCKED"* || "$screen_state" == *"mScreenState=ON_LOCKED"*) ]]; then
         return 0  # System is not charging and screen is locked
     fi
     return 1  # System is either charging or unlocked
