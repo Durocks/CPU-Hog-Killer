@@ -45,6 +45,25 @@ should_monitor() {
     return 1  # System is either charging or unlocked
 }
 
+# Function to check for ongoing or ringing calls
+check_for_ongoing_calls() {
+    # Get telephony registry info
+    local telephony_info=$(dumpsys telephony.registry)
+
+    # Extract call states
+    local foreground_call_states=$(echo "$telephony_info" | grep -o 'mForegroundCallState=[^ ]*' | awk -F '=' '{print $2}')
+    local ringing_call_states=$(echo "$telephony_info" | grep -o 'mRingingCallState=[^ ]*' | awk -F '=' '{print $2}')
+
+    # Check if any call state is active (not 0 means active)
+    for state in $foreground_call_states $ringing_call_states; do
+        if [[ "$state" -ne 0 ]]; then
+            return 0  # True: There is an ongoing call or the phone is ringing
+        fi
+    done
+
+    return 1  # False: No ongoing or ringing calls
+}
+
 # Function to trim whitespace and extract the first word
 trim_and_extract_command() {
     # Extract the first word from the ARGS string and print it
