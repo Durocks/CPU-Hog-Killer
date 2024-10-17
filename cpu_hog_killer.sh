@@ -33,17 +33,33 @@ should_monitor() {
 
     # Extract relevant values
     local screen_locked=$(echo "$device_idle_info" | grep -o 'mScreenLocked=[^ ]*' | awk -F '=' '{print $2}')
+    local screen_on=$(echo "$device_idle_info" | grep -o 'mScreenOn=[^ ]*' | awk -F '=' '{print $2}')
     local charging=$(echo "$device_idle_info" | grep -o 'mCharging=[^ ]*' | awk -F '=' '{print $2}')  # Fixed the missing quote
 
+    # echo "Screen On: $screen_on"
     # echo "Screen Locked: $screen_locked"
     # echo "Charging: $charging"
 
     # Check if the system is not charging and screen is locked
-    if [[ "$charging" == "false" && "$screen_locked" == "true" ]]; then
+    if [[ "$screen_on" == "false" && "$charging" == "false" && "$screen_locked" == "true" ]]; then
         return 0  # System is not charging and screen is locked
     fi
     return 1  # System is either charging or unlocked
 }
+
+# Function to echo the result of should_monitor
+echo_should_monitor_result() {
+    should_monitor
+    local result=$?
+
+    # Print the result of should_monitor
+    if [[ $result -eq 0 ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is not charging and the screen is locked."
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is either charging, unlocked, or the screen is on."
+    fi
+}
+# echo_should_monitor_result
 
 # Function to check for ongoing or ringing calls
 check_for_ongoing_calls() {
@@ -63,6 +79,7 @@ check_for_ongoing_calls() {
 
     return 1  # False: No ongoing or ringing calls
 }
+# echo "$check_for_ongoing_calls"
 
 # Function to trim whitespace and extract the first word
 trim_and_extract_command() {
@@ -79,14 +96,19 @@ send_notification() {
 
 # Function to monitor CPU usage and analyze the top processes
 monitor_and_analyze() {
+    check_for_ongoing_calls
+    if [[ $? -eq 0 ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') There is an ongoing call or the phone is ringing"
+        return 1 # Exit the function to resume in the next cycle
+    fi
     cleanup  # Call cleanup before starting the monitoring.
     echo "$(date '+%Y-%m-%d %H:%M:%S') Monitoring CPU usage for $MONITOR_DURATION seconds..."
     TIME_SPENT=0
     while [ "$TIME_SPENT" -lt "$MONITOR_DURATION" ]; do
         # Check if the system is idle at the beginning of each iteration
-        if ! should_monitor; then
-            echo "System is not idle or it's charging. Exiting monitoring for this cycle."
-            cleanup  # Call cleanup after monitoring duration is complete
+        should_monitor
+        if [[ $? -ne 0 ]]; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S') System is either charging, unlocked, or the screen is on."
             return 1 # Exit the function to resume in the next cycle
         fi
 
