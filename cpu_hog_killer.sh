@@ -4,8 +4,8 @@
 # echo "$(date '+%Y-%m-%d %H:%M:%S') Current shell: $SHELL"
 
 # Configuration
-SAMPLE_INTERVAL=2                  # Interval between CPU usage samples in seconds
-MONITOR_DURATION=12                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
+SAMPLE_INTERVAL=10                  # Interval between CPU usage samples in seconds
+MONITOR_DURATION=60                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
 CPU_THRESHOLD=30                    # CPU usage threshold (in percent)
 TOP_PROCESSES_COUNT=5               # Number of top processes to monitor
 MEASUREMENTS_LIMIT=5                # Number of measurements before killing the process
