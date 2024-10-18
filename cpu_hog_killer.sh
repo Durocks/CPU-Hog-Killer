@@ -227,7 +227,7 @@ while true; do
             REMAINING_MONITORING_SKIPS=$((REMAINING_MONITORING_SKIPS - 1))
             echo "$(date '+%Y-%m-%d %H:%M:%S') Skipping this loop. Remaining loop skips: $REMAINING_MONITORING_SKIPS"
         fi
-        echo "$(date '+%Y-%m-%d %H:%M:%S') Next monitoring in $MONITOR_WAIT_TIME seconds."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Next device idle check in $MONITOR_WAIT_TIME seconds."
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
         MONITORING_SKIPS=0
