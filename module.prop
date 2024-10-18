@@ -3,4 +3,4 @@ name=CPU Hog Killer
 version=1.6
 versionCode=1
 author=Fox
-description=Module to kill processes hogging the CPU
+description=This module will run an ongoing script at boot that will monitor and kill processes hogging the CPU.
