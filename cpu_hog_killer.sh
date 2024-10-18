@@ -4,15 +4,18 @@
 # echo "$(date '+%Y-%m-%d %H:%M:%S') Current shell: $SHELL"
 
 # Configuration
-SAMPLE_INTERVAL=10                  # Interval between CPU usage samples in seconds
-MONITOR_DURATION=60                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
+SAMPLE_INTERVAL=2                  # Interval between CPU usage samples in seconds
+MONITOR_DURATION=12                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
 CPU_THRESHOLD=30                    # CPU usage threshold (in percent)
 TOP_PROCESSES_COUNT=5               # Number of top processes to monitor
 MEASUREMENTS_LIMIT=5                # Number of measurements before killing the process
 INITIAL_SLEEP_TIME=60               # Initial number of seconds to wait for the next run, when the screen is off.
 HIGH_PRIORITY_MULTIPLIER=3          # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
 ORIGINAL_SELINUX=$(getenforce)      # Backup the original SELinux Status.
-WHITE_LIST="toybox|android.system.suspend-service"
+WHITE_LIST="toybox|android.system.suspend-service"    # Whitelisted processes / apps.
+MONITORING_RUNS=0                   # Number of times the processes were monitored.
+MONITORING_SKIPS=0                  # This indicates how many times the script should skip the monitoring during the device idle check loop.
+REMAINING_MONITORING_SKIPS=0        # Amount of the next monitoring runs that will be skipped.
 
 # Function to cleanup measurements
 cleanup() {
@@ -27,7 +30,7 @@ cleanup() {
 # Function to check if the system is idle (not charging and screen is locked)
 should_monitor() {
     # Get device idle states
-    local device_idle_info=$(dumpsys deviceidle)
+    local device_idle_info=$(dumpsys deviceidle | grep -E 'mScreenLocked|mScreenOn|mCharging')
 
     # echo "$device_idle_info"
 
@@ -64,7 +67,7 @@ echo_should_monitor_result() {
 # Function to check for ongoing or ringing calls
 check_for_ongoing_calls() {
     # Get telephony registry info
-    local telephony_info=$(dumpsys telephony.registry)
+    local telephony_info=$(dumpsys telephony.registry | grep -E 'mForegroundCallState|mRingingCallState')
 
     # Extract call states
     local foreground_call_states=$(echo "$telephony_info" | grep -o 'mForegroundCallState=[^ ]*' | awk -F '=' '{print $2}')
@@ -76,7 +79,6 @@ check_for_ongoing_calls() {
             return 0  # True: There is an ongoing call or the phone is ringing
         fi
     done
-
     return 1  # False: No ongoing or ringing calls
 }
 # echo "$check_for_ongoing_calls"
@@ -208,21 +210,28 @@ monitor_and_analyze() {
 MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME
 while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
-    if should_monitor; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle."
-        
-        # Call the monitoring function
-        monitor_and_analyze
-
-#         I'm commenting this, because it's not worth it. Running should_monitor every 60 seconds should not consume much CPU.
-#        status=$?  # Capture the exit status
-#        if [ $status -eq 0 ]; then  # Check if the function returned a zero status (indicating success)
-#            echo "Doubling the Monitor Wait Time…"
-#            # MONITOR_WAIT_TIME=$((MONITOR_WAIT_TIME * 2))  # Double the wait time after each monitoring session
-#            fi
-
+    should_monitor
+    if [ $? -eq 0 ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle."
+        if [ "$REMAINING_MONITORING_SKIPS" -eq 0 ]; then
+            # Call the monitoring function
+            monitor_and_analyze
+            if [ $MONITORING_SKIPS -eq 0 ]; then
+                MONITORING_SKIPS=1
+            else
+                MONITORING_SKIPS=$((MONITORING_SKIPS * 2))
+            fi
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Increasing the amount of loop skips to $MONITORING_SKIPS…"
+            REMAINING_MONITORING_SKIPS=$MONITORING_SKIPS
+        else
+            REMAINING_MONITORING_SKIPS=$((REMAINING_MONITORING_SKIPS - 1))
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Skipping this loop. Remaining loop skips: $REMAINING_MONITORING_SKIPS"
+        fi
         echo "$(date '+%Y-%m-%d %H:%M:%S') Next monitoring in $MONITOR_WAIT_TIME seconds."
     else
+        echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
+        MONITORING_SKIPS=0
+        REMAINING_MONITORING_SKIPS=0
         MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME  # Reset wait time if the system is active
         echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle or it's charging. Skipping monitoring for $MONITOR_WAIT_TIME seconds."
     fi
