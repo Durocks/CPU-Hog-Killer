@@ -8,7 +8,7 @@ SAMPLE_INTERVAL=10                  # Interval between CPU usage samples in seco
 MONITOR_DURATION=60                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
 CPU_THRESHOLD=30                    # CPU usage threshold (in percent)
 TOP_PROCESSES_COUNT=5               # Number of top processes to monitor
-MEASUREMENTS_LIMIT=1                # Number of measurements before killing the process
+MEASUREMENTS_LIMIT=5                # Number of measurements before killing the process
 INITIAL_SLEEP_TIME=60               # Initial number of seconds to wait for the next run, when the screen is off.
 HIGH_PRIORITY_MULTIPLIER=3          # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
 ORIGINAL_SELINUX=$(getenforce)      # Backup the original SELinux Status.
