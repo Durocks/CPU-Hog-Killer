@@ -232,9 +232,11 @@ while true; do
         fi
         echo "$(date '+%Y-%m-%d %H:%M:%S') Next device idle check in $MONITOR_WAIT_TIME seconds."
     else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
-        MONITORING_SKIPS=0
-        REMAINING_MONITORING_SKIPS=0
+        if [ "$MONITORING_SKIPS" -ne 0 ] || [ "$REMAINING_MONITORING_SKIPS" -ne 0 ]; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
+            MONITORING_SKIPS=0
+            REMAINING_MONITORING_SKIPS=0
+        fi
         MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME  # Reset wait time if the system is active
         echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle or it's charging. Skipping monitoring for $MONITOR_WAIT_TIME seconds."
     fi
