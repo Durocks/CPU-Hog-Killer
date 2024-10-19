@@ -31,3 +31,5 @@ jobs:
           echo Add other actions to build,
           echo test, and deploy your project.
           ls
+          rm *.zip
+          zip -r cpu_hog_killer_v1.7.zip *
