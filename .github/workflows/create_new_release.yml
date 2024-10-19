@@ -28,8 +28,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
-          ls
-          rm *.zip
+          echo Removing the current zip…
+          rm -f *.zip
+          echo Creating a new zip release file…
           zip -r cpu_hog_killer_v1.7.zip *
