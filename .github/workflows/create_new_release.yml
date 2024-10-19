@@ -2,38 +2,44 @@
 
 name: CI
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
-          echo Removing the current zip…
-          rm -f *.zip
-          echo Creating a new zip release file…
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          ls
+          
+          rm -f *.zip # Use -f to ignore errors if the zip doesn't exist
           zip -r cpu_hog_killer_v1.7.zip *
-          name: Upload zip artifact
-          uses: actions/upload-artifact@v3
-          with:
-            name: cpu_hog_killer_v1.7.zip
-            path: cpu_hog_killer_v1.7.zip
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v1.7
+          release_name: Release v1.7
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: cpu_hog_killer_v1.7.zip
+          asset_name: cpu_hog_killer_v1.7.zip
+          asset_content_type: application/zip
