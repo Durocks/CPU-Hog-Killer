@@ -46,6 +46,7 @@ should_monitor() {
 
     # Check if the system is not charging and screen is locked
     if [[ "$screen_on" == "false" && "$charging" == "false" && "$screen_locked" == "true" ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') The system is idle."
         return 0  # System is not charging and screen is locked
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') System is either charging, unlocked, or the screen is on. Sleeping for $MONITOR_WAIT_TIME seconds…"
@@ -221,7 +222,6 @@ while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
     should_monitor
     if [ $? -eq 0 ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle."
         if [ "$REMAINING_MONITORING_SKIPS" -eq 0 ]; then
             # Call the monitoring function
             monitor_and_analyze
