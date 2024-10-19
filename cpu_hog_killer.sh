@@ -46,7 +46,15 @@ should_monitor() {
 
     # Check if the system is not charging and screen is locked
     if [[ "$screen_on" == "false" && "$charging" == "false" && "$screen_locked" == "true" ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') The system is idle."
         return 0  # System is not charging and screen is locked
+    else
+        echo "$(date '+%Y-%m-%d %H:%M:%S') System is either charging, unlocked, or the screen is on. Sleeping for $MONITOR_WAIT_TIME seconds…"
+        if [ "$MONITORING_SKIPS" -ne 0 ] || [ "$REMAINING_MONITORING_SKIPS" -ne 0 ]; then
+                echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
+                MONITORING_SKIPS=0
+                REMAINING_MONITORING_SKIPS=0
+        fi
     fi
     return 1  # System is either charging or unlocked
 }
@@ -111,7 +119,6 @@ monitor_and_analyze() {
         # Check if the system is idle at the beginning of each iteration
         should_monitor
         if [[ $? -ne 0 ]]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') System is either charging, unlocked, or the screen is on."
             return 1 # Exit the function to resume in the next cycle
         fi
 
@@ -215,7 +222,6 @@ while true; do
     echo "$(date '+%Y-%m-%d %H:%M:%S') Checking if the system is idle..."
     should_monitor
     if [ $? -eq 0 ]; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') System is idle."
         if [ "$REMAINING_MONITORING_SKIPS" -eq 0 ]; then
             # Call the monitoring function
             monitor_and_analyze
@@ -231,14 +237,6 @@ while true; do
             echo "$(date '+%Y-%m-%d %H:%M:%S') Skipping this loop. Remaining loop skips: $REMAINING_MONITORING_SKIPS"
         fi
         echo "$(date '+%Y-%m-%d %H:%M:%S') Next device idle check in $MONITOR_WAIT_TIME seconds."
-    else
-        if [ "$MONITORING_SKIPS" -ne 0 ] || [ "$REMAINING_MONITORING_SKIPS" -ne 0 ]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') Resetting the loop skips to 0…"
-            MONITORING_SKIPS=0
-            REMAINING_MONITORING_SKIPS=0
-        fi
-        MONITOR_WAIT_TIME=$INITIAL_SLEEP_TIME  # Reset wait time if the system is active
-        echo "$(date '+%Y-%m-%d %H:%M:%S') System is not idle or it's charging. Skipping monitoring for $MONITOR_WAIT_TIME seconds."
     fi
     sleep "$MONITOR_WAIT_TIME"
 done
