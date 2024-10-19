@@ -32,8 +32,8 @@ jobs:
           rm -f *.zip
           echo Creating a new zip release file…
           zip -r cpu_hog_killer_v1.7.zip *
-             - name: Upload zip artifact
-     uses: actions/upload-artifact@v3
-     with:
-       name: cpu_hog_killer_v1.7.zip
-       path: cpu_hog_killer_v1.7.zip
+          - name: Upload zip artifact
+          uses: actions/upload-artifact@v3
+          with:
+            name: cpu_hog_killer_v1.7.zip
+            path: cpu_hog_killer_v1.7.zip
