@@ -1,5 +1,9 @@
 name: CI
 
+# Define a variable for the version
+env:
+  VERSION: "1.6"
+
 on:
   push:
     branches: [ "main" ]
@@ -17,12 +21,12 @@ jobs:
       - name: Run a multi-line script
         run: |
           echo Removing the current zip…
-          rm -f cpu_hog_killer_v1.7.zip
+          rm -f cpu_hog_killer_v1.${{ env.VERSION }}.zip
           echo Creating a new zip release file…
-          zip -r cpu_hog_killer_v1.7.zip *
+          zip -r cpu_hog_killer_v1.${{ env.VERSION }}.zip *
 
       - name: Upload zip artifact
         uses: actions/upload-artifact@v3
         with:
-          name: cpu_hog_killer_v1.7.zip
-          path: cpu_hog_killer_v1.7.zip
+          name: cpu_hog_killer_v1.${{ env.VERSION }}.zip
+          path: cpu_hog_killer_v1.${{ env.VERSION }}.zip
