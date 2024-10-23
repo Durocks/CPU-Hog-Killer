@@ -45,7 +45,7 @@ should_monitor() {
     # echo "Charging: $charging"
 
     # Check if the system is not charging and screen is locked
-    if [[ "$screen_on" == "false" && "$screen_locked" == "true" ]]; then
+    if [[ "$screen_on" == "false" && "$charging" == "false" && "$screen_locked" == "true" ]]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') The system is idle."
         return 0  # System is not charging and screen is locked
     else
