@@ -232,7 +232,6 @@ while true; do
                     MONITORING_SKIPS=$((MONITORING_SKIPS * 2))
                 fi
                 echo "$(date '+%Y-%m-%d %H:%M:%S') Increasing the amount of loop skips to $MONITORING_SKIPS…"
-                REMAINING_MONITORING_SKIPS=$MONITORING_SKIPS
             fi
         else
             REMAINING_MONITORING_SKIPS=$((REMAINING_MONITORING_SKIPS - 1))
