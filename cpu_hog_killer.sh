@@ -225,13 +225,14 @@ while true; do
         if [ "$REMAINING_MONITORING_SKIPS" -eq 0 ]; then
             # Call the monitoring function
             monitor_and_analyze
-            if [ $MONITORING_SKIPS -eq 0 ]; then
-                MONITORING_SKIPS=1
-            else
-                MONITORING_SKIPS=$((MONITORING_SKIPS * 2))
+            if [ $? -eq 0 ]; then    # In this case, we can assume the function ended successfully without errors, so we need to increase the skips.
+                if [ $MONITORING_SKIPS -eq 0 ]; then
+                    MONITORING_SKIPS=1
+                else
+                    MONITORING_SKIPS=$((MONITORING_SKIPS * 2))
+                fi
+                echo "$(date '+%Y-%m-%d %H:%M:%S') Increasing the amount of loop skips to $MONITORING_SKIPS…"
             fi
-            echo "$(date '+%Y-%m-%d %H:%M:%S') Increasing the amount of loop skips to $MONITORING_SKIPS…"
-            REMAINING_MONITORING_SKIPS=$MONITORING_SKIPS
         else
             REMAINING_MONITORING_SKIPS=$((REMAINING_MONITORING_SKIPS - 1))
             echo "$(date '+%Y-%m-%d %H:%M:%S') Skipping this loop. Remaining loop skips: $REMAINING_MONITORING_SKIPS"
