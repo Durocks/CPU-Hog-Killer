@@ -2,7 +2,7 @@ name: CI
 
 # Define a variable for the version
 env:
-  VERSION: "1.6"
+  VERSION: "1.7"
 
 on:
   push:
