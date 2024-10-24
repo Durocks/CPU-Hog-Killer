@@ -7,12 +7,14 @@
 SAMPLE_INTERVAL=10                  # Interval between CPU usage samples in seconds
 MONITOR_DURATION=60                 # Total duration to monitor each process (e.g., 300 seconds = 5 minutes)
 CPU_THRESHOLD=30                    # CPU usage threshold (in percent)
+# CPU_THRESHOLD=5                    # Testing CPU usage threshold (in percent)
 TOP_PROCESSES_COUNT=5               # Number of top processes to monitor
 MEASUREMENTS_LIMIT=5                # Number of measurements before killing the process
+# MEASUREMENTS_LIMIT=1                # Testing Number of measurements before killing the process
 INITIAL_SLEEP_TIME=60               # Initial number of seconds to wait for the next run, when the screen is off.
 HIGH_PRIORITY_MULTIPLIER=3          # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
 ORIGINAL_SELINUX=$(getenforce)      # Backup the original SELinux Status.
-WHITE_LIST="toybox|android.system.suspend-service"    # Whitelisted processes / apps.
+WHITE_LIST="toybox|android.system.suspend-service|audioserver|android.hardware.audio.service_64"    # Whitelisted processes / apps.
 MONITORING_RUNS=0                   # Number of times the processes were monitored.
 MONITORING_SKIPS=0                  # This indicates how many times the script should skip the monitoring during the device idle check loop.
 REMAINING_MONITORING_SKIPS=0        # Amount of the next monitoring runs that will be skipped.
@@ -72,6 +74,34 @@ echo_should_monitor_result() {
     fi
 }
 # echo_should_monitor_result
+
+# Function to get the package name of the playing app, if there's media playing.
+get_playing_media_package_name() {
+    # Get the dumpsys media_session output
+    output=$(dumpsys media_session | grep -E "(PLAYING|package=)")
+
+    # Initialize variables
+    local playing_package=""
+    local previous_line=""
+
+    # Iterate through the output line by line
+    while IFS= read -r line; do
+        if [[ "$line" == *"state=PLAYING"* ]]; then
+            # The previous line should contain the package
+            playing_package=$(echo "$previous_line" | cut -d'=' -f2)
+            break
+        fi
+        # Update the previous line
+        previous_line="$line"
+    done <<< "$output"
+
+    # Output the package name or a message
+    if [ -n "$playing_package" ]; then
+        echo "$playing_package"
+    else
+        echo "No media playing."
+    fi
+}
 
 # Function to check for ongoing or ringing calls
 check_for_ongoing_calls() {
@@ -174,8 +204,6 @@ monitor_and_analyze() {
                         # For system user, check if avg CPU usage is greater than double the threshold
                         if (( $(echo "$avg_cpu > $((CPU_THRESHOLD * $HIGH_PRIORITY_MULTIPLIER))" | bc -l) )) && [ "$SYSTEM_INSTABILITY_REPORTED" -eq 0 ]; then
                             echo "$(date '+%Y-%m-%d %H:%M:%S') Reporting the system as unstable… $cmd is using $formatted_avg_cpu% of the CPU on average."
-                            # echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
-                            # kill "$pid"  # Kill the process
                             TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
                             setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
                             su
@@ -186,14 +214,21 @@ monitor_and_analyze() {
                     else
                         # For other users, check if avg CPU usage is greater than the threshold
                         if (( $(echo "$avg_cpu > $CPU_THRESHOLD" | bc -l) )); then
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
-                            kill "$pid"  # Kill the process
-                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
-                            # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
-                            setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
-                            su
-                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
-                            setenforce $ORIGINAL_SELINUX
+                            # Get the currently playing media package name
+                            playing_media_package=$(get_playing_media_package_name)                    
+                            # Compare the command with the playing media package
+                            if [[ "$cmd" == "$playing_media_package" ]]; then
+                                echo "The package to be killed $cmd is playing media. Skipping…"
+                            else
+                                echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
+                                kill "$pid"  # Kill the process
+                                # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
+                                setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
+                                su
+                                su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
+                                setenforce $ORIGINAL_SELINUX
+                            fi
+                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration so it checks another process.
                         fi
                     fi
                 fi
