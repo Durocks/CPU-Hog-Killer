@@ -14,7 +14,7 @@ MEASUREMENTS_LIMIT=5                # Number of measurements before killing the 
 INITIAL_SLEEP_TIME=60               # Initial number of seconds to wait for the next run, when the screen is off.
 HIGH_PRIORITY_MULTIPLIER=3          # How many times bigger the CPU usage has to be to kill a high priority process, like system_server.
 ORIGINAL_SELINUX=$(getenforce)      # Backup the original SELinux Status.
-WHITE_LIST="toybox|android.system.suspend-service|audioserver"    # Whitelisted processes / apps.
+WHITE_LIST="toybox|android.system.suspend-service|audioserver|android.hardware.audio.service_64"    # Whitelisted processes / apps.
 MONITORING_RUNS=0                   # Number of times the processes were monitored.
 MONITORING_SKIPS=0                  # This indicates how many times the script should skip the monitoring during the device idle check loop.
 REMAINING_MONITORING_SKIPS=0        # Amount of the next monitoring runs that will be skipped.
@@ -197,13 +197,6 @@ monitor_and_analyze() {
 
                 # Check if the average CPU usage exceeds the threshold and if measurements limit is reached
                 if (( measurements_count[$pid] >= MEASUREMENTS_LIMIT )); then
-                    # Get the currently playing media package name
-                    playing_media_package=$(get_playing_media_package_name)                    
-                    # Compare the command with the playing media package
-                    if [[ "$cmd" == "$playing_media_package" ]]; then
-                        echo "The package to be killed $cmd is playing media. Skipping…"
-                        return 1
-                    fi
                     avg_cpu=$(echo "${avg_cpu_usage[$pid]} / ${measurements_count[$pid]}" | bc -l)
                     formatted_avg_cpu=$(printf "%.2f" "$avg_cpu")  # Format to two decimal places
                     # Determine the kill condition based on user
@@ -221,14 +214,21 @@ monitor_and_analyze() {
                     else
                         # For other users, check if avg CPU usage is greater than the threshold
                         if (( $(echo "$avg_cpu > $CPU_THRESHOLD" | bc -l) )); then
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
-                            kill "$pid"  # Kill the process
-                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration
-                            # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
-                            setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
-                            su
-                            su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
-                            setenforce $ORIGINAL_SELINUX
+                            # Get the currently playing media package name
+                            playing_media_package=$(get_playing_media_package_name)                    
+                            # Compare the command with the playing media package
+                            if [[ "$cmd" == "$playing_media_package" ]]; then
+                                echo "The package to be killed $cmd is playing media. Skipping…"
+                            else
+                                echo "$(date '+%Y-%m-%d %H:%M:%S') Killing process $cmd (Average CPU usage: $formatted_avg_cpu%)"
+                                kill "$pid"  # Kill the process
+                                # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
+                                setenforce 0    # I need to set SELinux Enforcing to Permissive for a second for the notification to show.
+                                su
+                                su -lp 2000 -c "cmd notification post -S bigtext -t '$cmd Killed' 'Tag' 'Average CPU Usage: $formatted_avg_cpu%'"
+                                setenforce $ORIGINAL_SELINUX
+                            fi
+                            TIME_SPENT=$((TIME_SPENT - 10))  # Add 10 seconds to monitor duration so it checks another process.
                         fi
                     fi
                 fi
